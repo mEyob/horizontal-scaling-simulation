@@ -1,6 +1,6 @@
 from collections import deque, namedtuple
 
-Event = namedtuple('Event', 'creator type time')
+Event = namedtuple('Event', 'rsc rsc_id type ev_time')
 
 
 class Queue():
@@ -26,7 +26,8 @@ class Worker():
         self.state = 'i'
     def process_job(self, job, current_time):
         self.state = 'w'
-        return Event(self._worker_id, 'job_complete', current_time + (job.get_size() / self._capacity))
+        self.job = job
+        return Event('worker', self._worker_id, 'job_complete', current_time + (job.get_size() / self._capacity))
 
 class Server(): 
     id_seq = 1
@@ -36,10 +37,37 @@ class Server():
         self.launch_delay = launch_delay
         self.queue = Queue(self.server_id + 'Q')
         self.workers = {}
+        self.idle_worker_reg = deque()
         for w_id in range(1, num_of_workers + 1):
             worker_id = self.server_id + 'W' + str(w_id)
             self.workers[worker_id] = Worker(worker_id, worker_capacity)
+            self.idle_worker_reg.append(worker_id)
     def start(self, current_time):
         self.state = 'launching'
-        return Event(self.server_id, 'launch_complete', current_time + self.launch_delay)
+        return Event('server', self.server_id, 'launch_complete', current_time + self.launch_delay)
+    def get_worker(self):
+        try:
+            return self.idle_worker_reg.popleft()
+        except IndexError:
+            return None
 
+    def event_handler(self, event):
+        if event.type == 'launch_complete':
+            self.state = 'ready'
+            self.assign_job(event.ev_time)
+        elif event.type == 'job_complete':
+            worker = self.workers[event.rsc_id]
+            worker.job.statistics(event.ev_time)
+            worker.state = 'i'
+            self.idle_worker_reg.append(event.rsc_id)
+            self.assign_job(event.ev_time)
+        elif event.type == 'new_job':
+            self.assign_job(event.ev_time)
+    def assign_job(self, current_time):
+        job = self.queue.get_job()
+        if job:
+            worker_id = self.get_worker()
+            if worker_id:
+                self.workers[worker_id].process_job(job, current_time)
+            else:
+                self.queue.put_job(job, new_job=False)
