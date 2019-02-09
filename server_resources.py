@@ -17,6 +17,8 @@ class Queue():
             return self._queue.pop()
         except IndexError:
             return None
+    def __repr__(self):
+        return 'Queue(id={!r} , Queue length={!r})'.format(self._queue_id, len(self._queue))
 
 
 class Worker():
@@ -28,6 +30,9 @@ class Worker():
         self.state = 'w' # w for working
         self.job = job
         return Event('worker', self._worker_id, 'job_complete', current_time + (job.get_size() / self._capacity))
+    def __repr__(self):
+        return 'Worker(id={!r} , Capacity={!r}, State={!r})'.format(self._worker_id, self._capacity, self.state)
+
 
 class Server(): 
     id_seq = 1
@@ -73,3 +78,6 @@ class Server():
             self.assign_job(event.ev_time)
         elif event.type == 'new_job':
             self.assign_job(event.ev_time)
+    def __repr__(self):
+        return 'Server(id={!r} , Workers={!r}, State={!r})'.format(self.server_id, len(self.workers), self.state)
+
