@@ -17,8 +17,10 @@ class Queue():
             return self._queue.pop()
         except IndexError:
             return None
+    def queue_length(self):
+        return len(self._queue)
     def __repr__(self):
-        return 'Queue(id={!r} , Queue length={!r})'.format(self._queue_id, len(self._queue))
+        return 'Queue(id={!r} , Queue length={!r})'.format(self._queue_id, self.queue_length())
 
 
 class Worker():
