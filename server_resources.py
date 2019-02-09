@@ -60,7 +60,7 @@ class Server():
         if job:
             worker_id = self.get_worker()
             if worker_id:
-                self.workers[worker_id].process_job(job, current_time)
+                return self.workers[worker_id].process_job(job, current_time)
             else:
                 self.queue.put_job(job, new_job=False)
     def event_handler(self, event):
@@ -69,15 +69,16 @@ class Server():
             for worker_id, worker in self.workers.items():
                 worker.state = 'i'
                 self.idle_worker_reg.append(worker_id)
-            self.assign_job(event.ev_time)
+            next_event = self.assign_job(event.ev_time)
         elif event.type == 'job_complete':
             worker = self.workers[event.rsc_id]
             worker.job.statistics(event.ev_time)
             worker.state = 'i'
             self.idle_worker_reg.append(event.rsc_id)
-            self.assign_job(event.ev_time)
+            next_event = self.assign_job(event.ev_time)
         elif event.type == 'new_job':
-            self.assign_job(event.ev_time)
+            next_event = self.assign_job(event.ev_time)
+        return next_event
     def __repr__(self):
         return 'Server(id={!r} , Workers={!r}, State={!r})'.format(self.server_id, len(self.workers), self.state)
 
