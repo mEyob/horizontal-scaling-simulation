@@ -9,6 +9,8 @@ class TrafficGenerator():
         self.fromfile = fromfile
         self.filetuple = filetuple
     def _set_dist(self):
+        '''A method for setting the pdf function of an instance 
+        of the TrafficGenerator class'''
         if self.dist_name =='unif':
             self.dist_func = random.uniform
         elif self.dist_name == 'expo':
@@ -19,8 +21,14 @@ class TrafficGenerator():
             self.dist_func = random.paretovariate
     @classmethod
     def from_file(cls, filetuple):
+        '''Alternative constructor for TrafficGenerator to generate
+        realizations from file instead of from a prob. distribution.
+        'filetuple' should be of the form:
+        namedtuple('FileTuple', 'filename column header delimiter') '''
         return cls(None, None, True, filetuple)
     def generate(self):
+        '''A method for generating realizations of a random process 
+        using probability distributions or a CSV file'''
         if self.fromfile:
             with open(self.filetuple.filename, 'r') as file_obj:
                 csv_reader = csv.reader(file_obj, delimiter=self.filetuple.delimiter)
