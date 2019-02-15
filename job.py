@@ -1,4 +1,4 @@
-import sys.stdout as stdout
+from sys import stdout as stdout
 
 class Job:
     '''docstring for job '''
