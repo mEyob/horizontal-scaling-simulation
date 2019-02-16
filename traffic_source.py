@@ -2,7 +2,10 @@ import random
 import csv
 
 class TrafficGenerator():
+    id_seq = 1
     def __init__(self, dist_name, dist_param, fromfile=False, filetuple=None):
+        self.rsc_id = 'G' + str(TrafficGenerator.id_seq)
+        TrafficGenerator.id_seq += 1
         self.dist_name = dist_name
         self.dist_param = dist_param
         self._set_dist()
@@ -74,4 +77,7 @@ if __name__ == "__main__":
     generator = gen_file.generate()
 
     while True:
-        print(next(generator))
+        try:
+            print(next(generator))
+        except StopIteration:
+            break
