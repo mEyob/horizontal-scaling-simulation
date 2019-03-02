@@ -10,9 +10,9 @@ class Job:
         self._arrival_time = arrival_time
         self._size = size
         self._remaining_size = size
-    def reduce_rem_size(self, size):
+    def reduce_size(self, size):
         self._remaining_size = max(0, self._remaining_size - size)
-    def get_rem_size(self):
+    def get_size(self):
         return self._remaining_size
     def statistics(self, current_time):
         '''
