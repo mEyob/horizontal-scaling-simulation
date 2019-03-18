@@ -7,8 +7,9 @@ class LoadBalancer():
         self.target_servers = servers
     def jsq(self):
         while True:
-            queue_len = {server.rsc_id: server.queue.queue_length() for server in self.target_servers.values()}
-            yield min(queue_len, key=queue_len.get)
+            queue_len = [(server.rsc_id, server.queue.queue_length()) for server in self.target_servers.values()]
+            queue_len.sort()
+            yield min(queue_len, key=lambda x: x[1])[0]
     def roundrobin(self):
         server_id = [server.rsc_id for server in self.target_servers.values()]
         while True:
