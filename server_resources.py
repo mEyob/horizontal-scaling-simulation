@@ -43,6 +43,7 @@ class Server():
         self.rsc_id = 'S' + str(Server.id_seq)
         Server.id_seq += 1
         self.launch_delay = launch_delay
+        self.cost_rate = cost_rate
         self.queue = Queue(self.rsc_id + 'Q')
         self.workers = {}
         self.idle_worker_reg = deque()
@@ -50,9 +51,14 @@ class Server():
             worker_id = self.rsc_id + 'W' + str(w_id)
             self.workers[worker_id] = Worker(worker_id, worker_capacity)
         self.state = 'stopped'
+        self.total_cost = 0
     def start(self, current_time):
+        self.last_cost_time = current_time
         self.state = 'launching'
         return Event('server', self.rsc_id, 'launch_complete', current_time + self.launch_delay)
+    def calc_cost(self, current_time):
+        self.total_cost += self.cost_rate * (current_time - self.last_cost_time)
+        self.last_cost_time = current_time
     def get_worker(self):
         try:
             return self.idle_worker_reg.popleft()
