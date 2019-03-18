@@ -59,7 +59,7 @@ class Controller():
 
             sim_time = event.ev_time
 
-def main(min_servers, starting_num, max_servers, launch_delay, num_of_workers, worker_capacity, arr_dist_name, arr_dist_param, size_dist_name, size_dist_param, fromfile=False, filetuple=None, lb_alg='roundrobin', max_jobs=1000):
+def main(min_servers, starting_num, max_servers, launch_delay, num_of_workers, worker_capacity, arr_dist_name, arr_dist_param, size_dist_name, size_dist_param, fromfile=False, filetuple=None, lb_alg='jsq', max_jobs=1000):
     arrival_generator = TrafficGenerator(arr_dist_name, arr_dist_param, fromfile, filetuple)
     size_generator = TrafficGenerator(size_dist_name, size_dist_param, fromfile, filetuple)
     generate_size = size_generator.generate()
