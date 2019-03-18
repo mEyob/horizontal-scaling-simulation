@@ -70,7 +70,7 @@ def main(min_servers, starting_num, max_servers, launch_delay, num_of_workers, w
     lb = lb()
     controller = Controller(server_group.scaling_group, arrival_generator, generate_size, lb)
     controller.run_simulation(max_jobs)
-    print(Job.avg_resp_time)
+    return Job.avg_resp_time
 
 if __name__ == '__main__':
     min_servers = 1
