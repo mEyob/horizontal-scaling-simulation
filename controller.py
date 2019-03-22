@@ -59,23 +59,24 @@ class Controller():
 
             sim_time = event.ev_time
 
-def main(min_servers, starting_num, max_servers, launch_delay, num_of_workers, worker_capacity, arr_dist_name, arr_dist_param, size_dist_name, size_dist_param, fromfile=False, filetuple=None, lb_alg='jsq', max_jobs=1000):
+def main(min_servers, starting_num, max_servers, *, server_cost_rate, launch_delay, num_of_workers, worker_capacity, avg_job_size, arr_dist_name, arr_dist_param, size_dist_name, size_dist_param, estimation_interval, scaling_period, fromfile=False, filetuple=None, lb_alg='jsq', max_jobs=1000):
     arrival_generator = TrafficGenerator(arr_dist_name, arr_dist_param, fromfile, filetuple)
     size_generator = TrafficGenerator(size_dist_name, size_dist_param, fromfile, filetuple)
     generate_size = size_generator.generate()
-    server_group = ScalingGroup(min_servers, starting_num, max_servers, launch_delay, num_of_workers, worker_capacity)
-    load_balancer = LoadBalancer(server_group.scaling_group)
+    Scaling_group = ScalingGroup(min_servers, starting_num, max_servers, server_cost_rate, launch_delay, num_of_workers, worker_capacity, avg_job_size, estimation_interval, scaling_period)
+    load_balancer = LoadBalancer(Scaling_group.scaling_group)
     
     lb = getattr(load_balancer, lb_alg.lower())    
     lb = lb()
-    controller = Controller(server_group.scaling_group, arrival_generator, generate_size, lb)
+    controller = Controller(Scaling_group, arrival_generator, generate_size, lb)
     controller.run_simulation(max_jobs)
     return Job.avg_resp_time
 
 if __name__ == '__main__':
     min_servers = 1
     max_servers = 10
-    starting_num = 1
+    starting_servers = 1
+    server_cost_rate = 1
     launch_delay = 1
     num_of_workers = 2
     worker_capacity = 100
@@ -83,6 +84,9 @@ if __name__ == '__main__':
     arr_dist_param = 150
     size_dist_name = 'expo'
     size_dist_param = 1
+    avg_job_size = 1 / size_dist_param
+    estimation_interval = 100 * (1 / arr_dist_param)
+    scaling_period = 10 * estimation_interval
 
     result = main(
     min_servers,
