@@ -13,6 +13,7 @@ class Controller():
         self.rsc_id = 'C' + str(Controller.id_seq)
         Controller.id_seq += 1
         self.scaling_group = scaling_group
+        self.server_group = scaling_group.scaling_group
         self.arrival_generator = arrival_generator
         self.size_generator = size_generator
         self.load_balancer = load_balancer
@@ -21,14 +22,14 @@ class Controller():
         sim_time = 0
         event_dict = {}
 
-        for rsc_id, server in self.scaling_group.items():
+        for rsc_id, server in self.server_group.items():
             event_dict[rsc_id] = server.start(sim_time)
         arrival = self.arrival_generator.generate()
         next_arr_time = sim_time + next(arrival)
         event_dict[self.arrival_generator.rsc_id] = Event('arr_generator', self.arrival_generator.rsc_id, 'arrival', next_arr_time)
 
-        # for rsc_id in self.scaling_group.keys():
-        #     event_dict[rsc_id] = Event('server', rsc_id, 'dummy_event', inf)
+        # Scaling related event
+        event_dict[ScalingGroup.rsc_id] = Event('scaling_group', ScalingGroup.rsc_id, 'start_estimation', sim_time)
 
         while Job.num_of_jobs < max_jobs:
             event = min(event_dict.items(), key=lambda x: x[1].ev_time)[1]
@@ -37,25 +38,29 @@ class Controller():
                 chosen_server = next(self.load_balancer)
                 job_size = next(self.size_generator)
                 job = Job(event.ev_time, job_size)
-                self.scaling_group[chosen_server].queue.put_job(job)
-                new_event = self.scaling_group[chosen_server].event_handler(Event('ctrl', self.rsc_id, 'new_job', event.ev_time))
+                self.server_group[chosen_server].queue.put_job(job)
+                new_event = self.server_group[chosen_server].event_handler(Event('ctrl', self.rsc_id, 'new_job', event.ev_time))
                 if new_event.type is not 'dummy_event':
                     event_dict[new_event.rsc_id] = new_event
                 try:
                     next_arr_time = event.ev_time + next(arrival)
                 except StopIteration:
                     break
+                self.scaling_group.job_count += 1
                 event_dict[self.arrival_generator.rsc_id] = Event('arr_generator', self.arrival_generator.rsc_id, 'arrival', next_arr_time)
 
-            else:
+            elif event.type == 'launch_complete' or event.type == 'job_complete':
                 server_id = event.rsc_id.split('W')[0]
-                new_event = self.scaling_group[server_id].event_handler(event)
+                new_event = self.server_group[server_id].event_handler(event)
                 if event.type == 'launch_complete':
                     event_dict[event.rsc_id] = Event('server', event.rsc_id, 'launch_complete', inf)
                 elif event.type == 'job_complete':
                     event_dict[event.rsc_id] = Event('worker', event.rsc_id, 'job_complete', inf)
                 if new_event.type is not 'dummy_event':
                     event_dict[new_event.rsc_id] = new_event
+            elif event.type == 'start_estimation' or event.type == 'start_scaling':
+                event = self.scaling_group.event_handler(event)
+                event_dict[ScalingGroup.rsc_id] = event
 
             sim_time = event.ev_time
 
