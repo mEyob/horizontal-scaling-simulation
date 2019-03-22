@@ -84,4 +84,23 @@ if __name__ == '__main__':
     size_dist_name = 'expo'
     size_dist_param = 1
 
-    main(min_servers, starting_num, max_servers, launch_delay, num_of_workers, worker_capacity, arr_dist_name, arr_dist_param, size_dist_name, size_dist_param, fromfile=False, filetuple=None, lb_alg='roundrobin', max_jobs=100000)
+    result = main(
+    min_servers,
+    starting_servers, 
+    max_servers,
+    server_cost_rate = server_cost_rate, 
+    launch_delay = launch_delay, 
+    num_of_workers = num_of_workers, 
+    worker_capacity = worker_capacity, 
+    avg_job_size = avg_job_size,
+    arr_dist_name = arr_dist_name, 
+    arr_dist_param = arr_dist_param, 
+    size_dist_name = size_dist_name, 
+    size_dist_param = size_dist_param, 
+    estimation_interval = estimation_interval,
+    scaling_period = scaling_period,
+    fromfile=False, 
+    filetuple=None, 
+    lb_alg='jsq', 
+    max_jobs=100000
+    )
