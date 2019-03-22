@@ -10,13 +10,17 @@ launch_delay = 1
 num_of_workers = 2
 worker_capacity = 100
 arr_dist_name = 'expo'
-arr_dist_param = 150
+arr_dist_param = 100
 size_dist_name = 'expo'
 size_dist_param = 1
+avg_job_size = 1 / size_dist_param
+server_cost_rate = 1
 fromfile=False 
 filetuple=None
 lb_alg='roundrobin'
 max_jobs=100000
+estimation_interval = 100 * (1 / arr_dist_param)
+scaling_period = 10 * estimation_interval
 
 parser = argparse.ArgumentParser()
 
@@ -57,15 +61,19 @@ max_servers = int(args.max)
 starting_servers = int(args.start)
 result = controller.main(
     min_servers,
-    max_servers,
     starting_servers, 
-    launch_delay, 
-    num_of_workers, 
-    worker_capacity, 
-    arr_dist_name, 
-    arr_dist_param, 
-    size_dist_name, 
-    size_dist_param, 
+    max_servers,
+    server_cost_rate = server_cost_rate, 
+    launch_delay = launch_delay, 
+    num_of_workers = num_of_workers, 
+    worker_capacity = worker_capacity, 
+    avg_job_size = avg_job_size,
+    arr_dist_name = arr_dist_name, 
+    arr_dist_param = arr_dist_param, 
+    size_dist_name = size_dist_name, 
+    size_dist_param = size_dist_param, 
+    estimation_interval = estimation_interval,
+    scaling_period = scaling_period,
     fromfile=fromfile, 
     filetuple=filetuple, 
     lb_alg=lb_alg, 
