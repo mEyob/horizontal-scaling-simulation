@@ -39,7 +39,7 @@ class Worker():
 
 class Server(): 
     id_seq = 1
-    def __init__(self, launch_delay,num_of_workers, worker_capacity):
+    def __init__(self, launch_delay, cost_rate, num_of_workers, worker_capacity, avg_job_size):
         self.rsc_id = 'S' + str(Server.id_seq)
         Server.id_seq += 1
         self.launch_delay = launch_delay
