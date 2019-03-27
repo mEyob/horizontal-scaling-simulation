@@ -52,12 +52,18 @@ class Server():
             self.workers[worker_id] = Worker(worker_id, worker_capacity)
         self.state = 'stopped'
         self.total_cost = 0
+        self.last_cost_time = -1 # cost should acumulate only after the server is started for the first time
     def start(self, current_time):
         self.last_cost_time = current_time
         self.state = 'launching'
         return Event('server', self.rsc_id, 'launch_complete', current_time + self.launch_delay)
+    def stop(self, current_time):
+        self.calc_cost(current_time)
+        self.state = 'stopped'
+        self.idle_worker_reg = deque()
     def calc_cost(self, current_time):
-        self.total_cost += self.cost_rate * (current_time - self.last_cost_time)
+        if self.last_cost_time > -1:
+            self.total_cost += self.cost_rate * (current_time - self.last_cost_time)
         self.last_cost_time = current_time
     def get_worker(self):
         try:
@@ -74,6 +80,7 @@ class Server():
                 self.queue.put_job(job, new_job=False)
         return Event('server', self.rsc_id, 'dummy_event', inf)
     def event_handler(self, event):
+        if self.state in ['stopped', 'marked_for_stop']: print(self.state)
         if event.type == 'launch_complete':
             self.state = 'ready'
             for worker_id, worker in self.workers.items():
@@ -85,6 +92,10 @@ class Server():
             worker.job.statistics(event.ev_time)
             worker.state = 'i'
             self.idle_worker_reg.append(event.rsc_id)
+            if self.state == 'marked_for_stop' and self.queue.queue_length() == 0:
+                worker_states = [True for worker in self.workers if worker.state == 'i']
+                if all(worker_states):
+                    self.stop(event.ev_time)
             next_event = self.assign_job(event.ev_time)
         elif event.type == 'new_job':
             next_event = self.assign_job(event.ev_time)
