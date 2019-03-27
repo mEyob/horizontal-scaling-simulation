@@ -9,7 +9,7 @@ Event = namedtuple('Event', 'rsc rsc_id type ev_time')
 
 class Controller():
     id_seq = 1
-    def __init__(self, scaling_group, arrival_generator, size_generator, load_balancer):
+    def __init__(self, scaling_group, starting_num, arrival_generator, size_generator, load_balancer):
         self.rsc_id = 'C' + str(Controller.id_seq)
         Controller.id_seq += 1
         self.scaling_group = scaling_group
@@ -17,13 +17,17 @@ class Controller():
         self.arrival_generator = arrival_generator
         self.size_generator = size_generator
         self.load_balancer = load_balancer
+        self.starting_num = starting_num
     
     def run_simulation(self, max_jobs):
         sim_time = 0
         event_dict = {}
 
+        count = 0
         for rsc_id, server in self.server_group.items():
-            event_dict[rsc_id] = server.start(sim_time)
+            if count < self.starting_num:
+                event_dict[rsc_id] = server.start(sim_time)
+                count += 1
         arrival = self.arrival_generator.generate()
         next_arr_time = sim_time + next(arrival)
         event_dict[self.arrival_generator.rsc_id] = Event('arr_generator', self.arrival_generator.rsc_id, 'arrival', next_arr_time)
@@ -59,28 +63,36 @@ class Controller():
                 if new_event.type is not 'dummy_event':
                     event_dict[new_event.rsc_id] = new_event
             elif event.type == 'start_estimation' or event.type == 'start_scaling':
-                event = self.scaling_group.event_handler(event)
-                event_dict[ScalingGroup.rsc_id] = event
+                events = self.scaling_group.event_handler(event)
+                for ev in events:
+                    event_dict[ev.rsc_id] = ev
+            current_time = event.ev_time
+        for server in self.scaling_group.scaling_group.values():
+            if server.state is not 'stopped':
+                server.calc_cost(current_time)
 
-            sim_time = event.ev_time
-
-def main(min_servers, starting_num, max_servers, *, server_cost_rate, launch_delay, num_of_workers, worker_capacity, avg_job_size, arr_dist_name, arr_dist_param, size_dist_name, size_dist_param, estimation_interval, scaling_period, fromfile=False, filetuple=None, lb_alg='jsq', max_jobs=1000):
+def main(min_servers, starting_num, max_servers, target_load, *, server_cost_rate, launch_delay, num_of_workers, worker_capacity, avg_job_size, arr_dist_name, arr_dist_param, size_dist_name, size_dist_param, estimation_interval, scaling_period, fromfile=False, filetuple=None, lb_alg='jsq', max_jobs=1000):
+    # the line below only works for exp inter-arrival times (assuming arr_dist_param = arrival rate)
+    # if not, substitute arr_dist_param with the correct arrival rate
+    transient = 0.1 * max_jobs / arr_dist_param
     arrival_generator = TrafficGenerator(arr_dist_name, arr_dist_param, fromfile, filetuple)
     size_generator = TrafficGenerator(size_dist_name, size_dist_param, fromfile, filetuple)
     generate_size = size_generator.generate()
-    Scaling_group = ScalingGroup(min_servers, starting_num, max_servers, server_cost_rate, launch_delay, num_of_workers, worker_capacity, avg_job_size, estimation_interval, scaling_period)
+    Scaling_group = ScalingGroup(min_servers, starting_num, max_servers, target_load, server_cost_rate, launch_delay, num_of_workers, worker_capacity, avg_job_size, estimation_interval, scaling_period, transient)
     load_balancer = LoadBalancer(Scaling_group.scaling_group)
     
     lb = getattr(load_balancer, lb_alg.lower())    
     lb = lb()
-    controller = Controller(Scaling_group, arrival_generator, generate_size, lb)
+    controller = Controller(Scaling_group, starting_num, arrival_generator, generate_size, lb)
     controller.run_simulation(max_jobs)
-    return Job.avg_resp_time
+    total_cost = sum([server.total_cost for server in Scaling_group.scaling_group.values()])
+    return Job.avg_resp_time, total_cost
 
 if __name__ == '__main__':
     min_servers = 1
     max_servers = 10
     starting_servers = 1
+    target_load = 0.5
     server_cost_rate = 1
     launch_delay = 1
     num_of_workers = 2
@@ -97,6 +109,7 @@ if __name__ == '__main__':
     min_servers,
     starting_servers, 
     max_servers,
+    target_load,
     server_cost_rate = server_cost_rate, 
     launch_delay = launch_delay, 
     num_of_workers = num_of_workers, 
