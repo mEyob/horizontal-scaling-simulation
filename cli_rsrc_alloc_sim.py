@@ -10,7 +10,7 @@ launch_delay = 1
 num_of_workers = 2
 worker_capacity = 100
 arr_dist_name = 'expo'
-arr_dist_param = 100
+arr_dist_param = 150
 size_dist_name = 'expo'
 size_dist_param = 1
 avg_job_size = 1 / size_dist_param
@@ -19,7 +19,7 @@ fromfile=False
 filetuple=None
 lb_alg='roundrobin'
 max_jobs=100000
-estimation_interval = 100 * (1 / arr_dist_param)
+estimation_interval = 1000 * (1 / arr_dist_param)
 scaling_period = 10 * estimation_interval
 
 parser = argparse.ArgumentParser()
@@ -28,9 +28,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("min",help='Minimum number of servers')
 parser.add_argument("max",help='Maximum number of servers')
 parser.add_argument("start",help='Starting number of servers')
+parser.add_argument("targetLoad", help='The load at which the system is supposed to operate')
 
 parser.add_argument("-C","--costrate", help='Operational (rental) cost of servers per time unit')
 parser.add_argument("-l","--launchdelay", help='Launch delay of servers')
+parser.add_argument("-L", "--lbalg", help='The load balancing algorithm. Can be JSQ, RND or RR')
 parser.add_argument("-w","--workers", help='Number of workers per server')
 parser.add_argument("-c","--workercap", help='Worker capacity')
 parser.add_argument("-j","--jobsize", help='Average job size')
@@ -46,6 +48,8 @@ if args.costrate:
     server_cost_rate = float(args.costrate)
 if args.launchdelay:
     launch_delay = float(args.launchdelay)
+if args.lbalg:
+    lb_alg = args.lbalg
 if args.workers:
     num_of_workers = float(args.workers)
 if args.workercap:
@@ -70,10 +74,12 @@ if args.autoscale:
 min_servers = int(args.min)
 max_servers = int(args.max) 
 starting_servers = int(args.start)
+target_load = float(args.targetLoad)
 result = controller.main(
     min_servers,
     starting_servers, 
     max_servers,
+    target_load,
     server_cost_rate = server_cost_rate, 
     launch_delay = launch_delay, 
     num_of_workers = num_of_workers, 
