@@ -50,12 +50,13 @@ class ScalingGroup():
         elif (est_load < self.target_load - self.threshold) and active_num_servers > self.min_servers:
             if active_num_servers > target_num_servers:
             # system underloaded
-                self.scaledown(active_num_servers - target_num_servers, current_time)
+                servers_to_stop = min([active_num_servers - target_num_servers, active_num_servers - self.min_servers])
+                self.scaledown(servers_to_stop, current_time)
         return events             
 
     def estimate(self):
         est_arrival_rate = self.job_count / self.estimation_interval
-        active_num_servers = sum([1 for server in self.scaling_group.values() if server.state in ['ready']])
+        active_num_servers = sum([1 for server in self.scaling_group.values() if server.state in ['busy', 'idle']])
         est_load = est_arrival_rate / (active_num_servers * self.workers_per_server * self.worker_service_rate)
         return est_load, est_arrival_rate, active_num_servers
 
@@ -71,7 +72,7 @@ class ScalingGroup():
         return events
 
     def scaledown(self, num_of_servers, current_time):
-        target_servers = [server for server in self.scaling_group.values() if server.queue.queue_length() == 0 and server.state in ['ready', 'launching']]
+        target_servers = [server for server in self.scaling_group.values() if server.state in ['idle']]
         if len(target_servers) >= num_of_servers:
             for _ in range(num_of_servers):
                 server = random.choice(target_servers)
@@ -83,5 +84,5 @@ class ScalingGroup():
                     server.stop(current_time)
             server_queue_tup = [(server.queue.queue_length(), server.rsc_id) for server in self.scaling_group.values()]
             to_be_stopped = nsmallest(num_of_servers - len(target_servers), server_queue_tup, key=lambda x: x[0])
-            for queue_len, rsc_id in to_be_stopped:
-                self.scaling_group[rsc_id].state = 'marked_for_stop'
+            for _, rsc_id in to_be_stopped:
+                self.scaling_group[rsc_id].marked_for_stop = True 
