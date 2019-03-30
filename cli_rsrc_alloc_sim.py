@@ -8,19 +8,18 @@ max_servers = 10
 starting_num = 1
 launch_delay = 1
 num_of_workers = 2
-worker_capacity = 100
+worker_capacity = 1
 arr_dist_name = 'expo'
 arr_dist_param = 150
 size_dist_name = 'expo'
-size_dist_param = 1
-avg_job_size = 1 / size_dist_param
+size_dist_param = [0.5]
 server_cost_rate = 1
 fromfile=False 
 filetuple=None
 lb_alg='roundrobin'
-max_jobs=100000
-estimation_interval = 1000 * (1 / arr_dist_param)
-scaling_period = 10 * estimation_interval
+max_jobs=50000
+estimation_interval = 10
+scaling_period = 60
 
 parser = argparse.ArgumentParser()
 
@@ -35,7 +34,7 @@ parser.add_argument("-l","--launchdelay", help='Launch delay of servers')
 parser.add_argument("-L", "--lbalg", help='The load balancing algorithm. Can be JSQ, RND or RR')
 parser.add_argument("-w","--workers", help='Number of workers per server')
 parser.add_argument("-c","--workercap", help='Worker capacity')
-parser.add_argument("-j","--jobsize", help='Average job size')
+#parser.add_argument("-j","--jobsize", help='Average job size')
 parser.add_argument("-a","--arrdist", help='Probability distribution of request inter-arrival times')
 parser.add_argument("-p","--arrdistparam", help='Used together with --arrdist option to set parameters for the arrival distribution')
 parser.add_argument("-s","--sizedist", help='Probability distribution of request size')
@@ -51,16 +50,19 @@ if args.launchdelay:
 if args.lbalg:
     lb_alg = args.lbalg
 if args.workers:
-    num_of_workers = float(args.workers)
+    num_of_workers = int(args.workers)
 if args.workercap:
     worker_capacity = float(args.workercap)
 if args.arrdist:
     arr_dist_name = args.arrdist
-if args.jobsize:
-    avg_job_size = float(args.jobsize)
+# if args.jobsize:
+#     avg_job_size = float(args.jobsize)
 if args.arrdistparam:
     arr_dist_param = args.arrdistparam.split()
-    arr_dist_param = tuple(map(float, arr_dist_param))
+    if len(arr_dist_param) == 1:
+        arr_dist_param = float(arr_dist_param[0])
+    else:
+        arr_dist_param = tuple(map(float, arr_dist_param))
 if args.sizedist:
     size_dist_name = args.sizedist
 if args.sizedistparam:
@@ -84,7 +86,6 @@ result = controller.main(
     launch_delay = launch_delay, 
     num_of_workers = num_of_workers, 
     worker_capacity = worker_capacity, 
-    avg_job_size = avg_job_size,
     arr_dist_name = arr_dist_name, 
     arr_dist_param = arr_dist_param, 
     size_dist_name = size_dist_name, 
