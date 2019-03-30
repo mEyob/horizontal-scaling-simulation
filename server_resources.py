@@ -30,6 +30,7 @@ class Worker():
         self._capacity = capacity
         self.state = 'u' # u for unavailable
     def process_job(self, job, current_time):
+        assert self.state == 'i', "Worker state {}. Worker needs to be idle to start processing jobs".format(self.state)
         self.state = 'w' # w for working
         self.job = job
         return Event('worker', self.rsc_id, 'job_complete', current_time + (job.get_size() / self._capacity))
@@ -51,15 +52,19 @@ class Server():
             worker_id = self.rsc_id + 'W' + str(w_id)
             self.workers[worker_id] = Worker(worker_id, worker_capacity)
         self.state = 'stopped'
+        self.marked_for_stop = False
         self.total_cost = 0
         self.last_cost_time = -1 # cost should acumulate only after the server is started for the first time
     def start(self, current_time):
         self.last_cost_time = current_time
         self.state = 'launching'
+        self.marked_for_stop = False
         return Event('server', self.rsc_id, 'launch_complete', current_time + self.launch_delay)
     def stop(self, current_time):
         self.calc_cost(current_time)
         self.state = 'stopped'
+        for worker in self.workers.values():
+            worker.state = 'u'
         self.idle_worker_reg = deque()
     def calc_cost(self, current_time):
         if self.last_cost_time > -1:
@@ -75,29 +80,39 @@ class Server():
         if job:
             worker_id = self.get_worker()
             if worker_id:
+                assert self.workers[worker_id].state == 'i', "Worker state {}. Worker needs to be idle to start processing jobs".format(self.workers[worker_id].state)
+                self.state = 'busy'
                 return self.workers[worker_id].process_job(job, current_time)
             else:
                 self.queue.put_job(job, new_job=False)
         return Event('server', self.rsc_id, 'dummy_event', inf)
+
     def event_handler(self, event):
-        if self.state in ['stopped', 'marked_for_stop']: print(self.state)
+        # worker_state = [worker.state for worker in self.workers.values()]
+        # if 'w' in worker_state and self.state == 'idle':
+        #     print(worker_state, self.state)
         if event.type == 'launch_complete':
-            self.state = 'ready'
+            assert self.state == 'launching', "Launch complete only possible in the \'launching\' state."
+            self.state = 'idle'
             for worker_id, worker in self.workers.items():
                 worker.state = 'i'
                 self.idle_worker_reg.append(worker_id)
             next_event = self.assign_job(event.ev_time)
         elif event.type == 'job_complete':
+            #assert self.state is 'busy', "Jobs can only be processed in the \'busy\' state."
             worker = self.workers[event.rsc_id]
             worker.job.statistics(event.ev_time)
             worker.state = 'i'
             self.idle_worker_reg.append(event.rsc_id)
-            if self.state == 'marked_for_stop' and self.queue.queue_length() == 0:
-                worker_states = [True for worker in self.workers if worker.state == 'i']
-                if all(worker_states):
-                    self.stop(event.ev_time)
+            worker_states = [True for worker in self.workers.values() if worker.state == 'i']
+            if all(worker_states) and self.queue.queue_length() == 0:
+                self.state = 'idle'
+            if self.marked_for_stop and self.state == 'idle':
+                self.stop(event.ev_time)
             next_event = self.assign_job(event.ev_time)
         elif event.type == 'new_job':
+            # if self.state not in ['busy', 'launching']:
+            #     print(self.state, event)
             next_event = self.assign_job(event.ev_time)
         return next_event
     def __repr__(self):
