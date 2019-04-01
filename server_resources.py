@@ -70,6 +70,10 @@ class Server():
         if self.last_cost_time > -1:
             self.total_cost += self.cost_rate * (current_time - self.last_cost_time)
         self.last_cost_time = current_time
+    def total_jobs(self):
+        queue_len = self.queue.queue_length()
+        busy_workers = sum([1 for worker in self.workers.values() if worker.state == 'w'])
+        return queue_len + busy_workers
     def get_worker(self):
         try:
             return self.idle_worker_reg.popleft()
