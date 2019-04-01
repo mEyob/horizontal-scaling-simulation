@@ -84,7 +84,7 @@ class Server():
         if job:
             worker_id = self.get_worker()
             if worker_id:
-                assert self.workers[worker_id].state == 'i', "Worker state {}. Worker needs to be idle to start processing jobs".format(self.workers[worker_id].state)
+                assert self.workers[worker_id].state == 'i', "Worker state {}. Only idle workers can start processing jobs".format(self.workers[worker_id].state)
                 self.state = 'busy'
                 return self.workers[worker_id].process_job(job, current_time)
             else:
@@ -103,12 +103,12 @@ class Server():
                 self.idle_worker_reg.append(worker_id)
             next_event = self.assign_job(event.ev_time)
         elif event.type == 'job_complete':
-            #assert self.state is 'busy', "Jobs can only be processed in the \'busy\' state."
+            assert self.state is 'busy', "Jobs can only be processed in the \'busy\' state."
             worker = self.workers[event.rsc_id]
             worker.job.statistics(event.ev_time)
             worker.state = 'i'
             self.idle_worker_reg.append(event.rsc_id)
-            worker_states = [True for worker in self.workers.values() if worker.state == 'i']
+            worker_states = [True if worker.state == 'i' else False for worker in self.workers.values() ]
             if all(worker_states) and self.queue.queue_length() == 0:
                 self.state = 'idle'
             if self.marked_for_stop and self.state == 'idle':
