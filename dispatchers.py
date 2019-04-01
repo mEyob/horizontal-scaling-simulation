@@ -8,7 +8,7 @@ class LoadBalancer():
         self.unavailable = ['stopped']
     def jsq(self):
         while True:
-            queue_len = [(server.rsc_id, server.queue.queue_length()) for server in self.target_servers.values() if server.state not in self.unavailable and not server.marked_for_stop]
+            queue_len = [(server.rsc_id, server.total_jobs()) for server in self.target_servers.values() if (server.state not in self.unavailable) and (not server.marked_for_stop)]
             queue_len.sort()
             yield min(queue_len, key=lambda x: x[1])[0]
     def roundrobin(self):
