@@ -15,9 +15,9 @@ class LoadBalancer():
         server_id = [server.rsc_id for server in self.target_servers.values()]
         while True:
             for serv_id in server_id:
-                if self.target_servers[serv_id].state not in self.unavailable and not self.target_servers[serv_id].marked_for_stop:
+                if (self.target_servers[serv_id].state not in self.unavailable) and (not self.target_servers[serv_id].marked_for_stop):
                     yield serv_id
     def random(self):
         while True:
-            server_id = [server.rsc_id for server in self.target_servers.values() if server.state not in self.unavailable and not server.marked_for_stop]
+            server_id = [server.rsc_id for server in self.target_servers.values() if (server.state not in self.unavailable) and (not server.marked_for_stop)]
             yield random.choice(server_id)
