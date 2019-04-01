@@ -67,7 +67,6 @@ class Controller():
                     event_dict[ev.rsc_id] = ev
             current_time = event.ev_time
         for server in self.scaling_group.scaling_group.values():
-            print(server.state)
             if server.state != 'stopped':
                 server.calc_cost(current_time)
 

@@ -92,9 +92,6 @@ class Server():
         return Event('server', self.rsc_id, 'dummy_event', inf)
 
     def event_handler(self, event):
-        # worker_state = [worker.state for worker in self.workers.values()]
-        # if 'w' in worker_state and self.state == 'idle':
-        #     print(worker_state, self.state)
         if event.type == 'launch_complete':
             assert self.state == 'launching', "Launch complete only possible in the \'launching\' state."
             self.state = 'idle'
@@ -115,8 +112,6 @@ class Server():
                 self.stop(event.ev_time)
             next_event = self.assign_job(event.ev_time)
         elif event.type == 'new_job':
-            # if self.state not in ['busy', 'launching']:
-            #     print(self.state, event)
             next_event = self.assign_job(event.ev_time)
         return next_event
     def __repr__(self):
