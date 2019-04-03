@@ -1,4 +1,4 @@
-from math import inf
+from math import inf, ceil, sqrt
 from collections import namedtuple
 from scaling_group import ScalingGroup
 from traffic_source import TrafficGenerator
@@ -86,7 +86,7 @@ def main(min_servers, starting_num, max_servers, target_load, *, server_cost_rat
     controller = Controller(Scaling_group, starting_num, arrival_generator, generate_size, lb)
     controller.run_simulation(max_jobs)
     total_cost = sum([server.total_cost for server in Scaling_group.scaling_group.values()])
-    return Job.avg_resp_time, total_cost
+    return Job.avg_resp_time, sqrt(Job.var_resp_time / (Job.num_of_jobs - 1)), total_cost, ceil(sum(Scaling_group.active_servers) / len(Scaling_group.active_servers))
 
 if __name__ == '__main__':
     min_servers = 1

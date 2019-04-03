@@ -24,8 +24,10 @@ class ScalingGroup():
         self.target_load = target_load
         self.threshold = 0.1
         self.job_count = 0
+        self.active_servers = []
     def event_handler(self, event):
         if event.type == 'start_estimation':
+            self.active_servers.append(sum([1 for server in self.scaling_group.values() if server.state in ['busy']]))
             self.period = 'est_period'
             self.job_count = 0
             event = [Event('scaling_group', ScalingGroup.rsc_id, 'start_scaling', event.ev_time + self.estimation_interval)]
