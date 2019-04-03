@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import controller
+import os 
 
 ###### Default parameter values
 min_servers = 1
@@ -97,7 +98,14 @@ result = controller.main(
     lb_alg=lb_alg, 
     max_jobs=max_jobs
     )
-print(result)
+filename = 'lb_alg-{}-targetload-{}.csv'.format(lb_alg, args.targetLoad)
+exists = os. path. isfile('./' + filename)
+if not exists:
+    with open(filename, 'w') as fhandle:
+        fhandle.write('AVG RESPONSE TIME,STD DEV,COST,ACTIVE SERVERS\n')
+
+with open(filename, 'a') as fhandle:
+    fhandle.write('{},{},{},{}\n'.format(*result))
 
 
 
