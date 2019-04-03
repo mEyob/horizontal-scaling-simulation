@@ -42,6 +42,9 @@ parser.add_argument("-s","--sizedist", help='Probability distribution of request
 parser.add_argument("-q","--sizedistparam", help='Used together with --size option to set parameters for the size distribution')
 parser.add_argument("-A","--autoscale", help='Autoscaling period for the server group')
 parser.add_argument("-e","--estinterval", help='Estimation interval for infering load parameters for autoscale')
+parser.add_argument("-F",'--file', dest='writetofile', action='store_true',help='write result to file instead of printing on the screen')
+parser.add_argument("-P", '--print', dest='writetofile', action='store_false',help='Print result on screen')
+parser.set_defaults(writetofile=False)
 args = parser.parse_args()
 
 if args.costrate:
@@ -98,14 +101,18 @@ result = controller.main(
     lb_alg=lb_alg, 
     max_jobs=max_jobs
     )
-filename = 'lb_alg-{}-targetload-{}.csv'.format(lb_alg, args.targetLoad)
-exists = os. path. isfile('./' + filename)
-if not exists:
-    with open(filename, 'w') as fhandle:
-        fhandle.write('AVG RESPONSE TIME,STD DEV,COST,ACTIVE SERVERS\n')
 
-with open(filename, 'a') as fhandle:
-    fhandle.write('{},{},{},{}\n'.format(*result))
+if args.writetofile:
+    filename = 'lb_alg-{}-targetload-{}.csv'.format(lb_alg, args.targetLoad)
+    exists = os. path. isfile('./' + filename)
+    if not exists:
+        with open(filename, 'w') as fhandle:
+            fhandle.write('AVG RESPONSE TIME,STD DEV,COST,ACTIVE SERVERS\n')
+
+    with open(filename, 'a') as fhandle:
+        fhandle.write('{},{},{},{}\n'.format(*result))
+else:
+    print('{},{},{},{}\n'.format(*result))
 
 
 
