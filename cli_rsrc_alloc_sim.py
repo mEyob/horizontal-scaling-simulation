@@ -104,7 +104,8 @@ result = controller.main(
 
 if args.writetofile:
     filename = 'lb_alg-{}-targetload-{}.csv'.format(lb_alg, args.targetLoad)
-    exists = os. path. isfile('./' + filename)
+    'vim-commands.txt')
+    exists = os.path.isfile(os.path.join(os.getcwd(),'data', filename))
     if not exists:
         with open(filename, 'w') as fhandle:
             fhandle.write('AVG RESPONSE TIME,STD DEV,COST,ACTIVE SERVERS\n')
