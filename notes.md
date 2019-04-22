@@ -53,7 +53,7 @@ of servers to stop/remove or launch based on current or estimated load.
 
 The following figure shows a black-box representation of each of the components discussed above and their interaction.
 
-<center><img src="{{ site.baseurl }}/assets/img/resource-group-arch.png" align="middle" style="width: 500px; height: 300px" /></center>
+<center><img src="figures/resource-group-arch.png" align="middle" style="width: 500px; height: 300px" /></center>
 
 ## Analysis
 
@@ -93,3 +93,9 @@ AutoScale - Target load and threshold - launches servers when actual load is gre
 									  it stops sending new requests to that server
 Elastic Load Balancer (ELB) - can use RR, JSQ, RND
 N EC2s - m copies of application hosted in a single EC2
+
+
+<center><img src="figures/roundrobin.png" align="middle" style="width: 500px; height: 300px" /></center>
+
+
+<center><img src="figures/jsq.png" align="middle" style="width: 500px; height: 300px" /></center>
